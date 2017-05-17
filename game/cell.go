@@ -7,10 +7,10 @@ import (
 type color int
 
 const (
-	BLANK color = iota
-	BLACK
-	WHITE
-	PUTABLE
+	BLANK   color = 0x0001
+	BLACK   color = 0x0010
+	WHITE   color = 0x0100
+	PUTABLE color = 0x1000
 )
 
 type cell struct {
@@ -30,22 +30,22 @@ func (c *cell) string() string {
 	}
 }
 
-func (c *cell) blank() *cell {
-	c.color = BLANK
+func (c *cell) change(color color) *cell {
+	c.color = color
 	return c
 }
 
-func (c *cell) black() *cell {
-	c.color = BLACK
-	return c
+func (c *cell) is(mask interface{}) bool {
+	switch val := mask.(type) {
+	case int:
+		return (int(c.color) & val) > 0
+	case color:
+		return (int(c.color) & int(val)) > 0
+	default:
+		return false
+	}
 }
 
-func (c *cell) white() *cell {
-	c.color = WHITE
-	return c
-}
-
-func (c *cell) putable() *cell {
-	c.color = PUTABLE
-	return c
+func (c *cell) isnot(mask interface{}) bool {
+	return c.is(mask) == false
 }
