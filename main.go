@@ -7,4 +7,5 @@ import (
 
 func main() {
 	field := game.Init()
+	fmt.Println(field.String())
 }
