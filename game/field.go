@@ -88,12 +88,7 @@ func (f *field) checkCells() {
 	}
 }
 
-func (f *field) Select(j int, i int) {
-	i--
-	j--
-	if i < 0 && i > 7 && j < 0 && j > 7 {
-		return
-	}
+func (f *field) Select(i int, j int) {
 	cells := f.checkCell(i, j)
 	if f.cells[i][j].is(PUTABLE) {
 		f.cells[i][j].change(f.turn)

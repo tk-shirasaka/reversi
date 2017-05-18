@@ -20,13 +20,13 @@ type cell struct {
 func (c *cell) string() string {
 	switch c.color {
 	case BLACK:
-		return ansi.Ansi("● ", ansi.BLACK, ansi.GREEN)
+		return ansi.Color("● ", ansi.BLACK, ansi.GREEN)
 	case WHITE:
-		return ansi.Ansi("● ", ansi.WHITE, ansi.GREEN)
+		return ansi.Color("● ", ansi.WHITE, ansi.GREEN)
 	case PUTABLE:
-		return ansi.Ansi("[]", ansi.RED, ansi.GREEN)
+		return ansi.Color("[]", ansi.RED, ansi.GREEN)
 	default:
-		return ansi.Ansi("  ", ansi.WHITE, ansi.GREEN)
+		return ansi.Color("  ", ansi.WHITE, ansi.GREEN)
 	}
 }
 
