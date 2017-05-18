@@ -69,10 +69,11 @@ func (f *field) checkCell(i int, j int) []*cell {
 	return cells
 }
 
-func (f *field) checkCells() {
+func (f *field) checkCells() int {
 	if f.dirty == false {
-		return
+		return -1
 	}
+	result := 0
 	for i, line := range f.cells {
 		for j, _ := range line {
 			c := &f.cells[i][j]
@@ -83,8 +84,20 @@ func (f *field) checkCells() {
 	}
 	for i, line := range f.cells {
 		for j, _ := range line {
-			f.checkCell(i, j)
+			result += len(f.checkCell(i, j))
 		}
+	}
+	return result
+}
+
+func (f *field) next() {
+	switch f.turn {
+	case BLACK:
+		f.turn = WHITE
+		break
+	case WHITE:
+		f.turn = BLACK
+		break
 	}
 }
 
@@ -95,14 +108,7 @@ func (f *field) Select(i int, j int) {
 		for _, cell := range cells {
 			cell.change(f.turn)
 		}
-		switch f.turn {
-		case BLACK:
-			f.turn = WHITE
-			break
-		case WHITE:
-			f.turn = BLACK
-			break
-		}
+		f.next()
 		f.dirty = true
 	}
 }
@@ -111,7 +117,12 @@ func (f *field) String() string {
 	str := "  1 2 3 4 5 6 7 8\n"
 	black := 0
 	white := 0
-	f.checkCells()
+	if f.checkCells() == 0 {
+		f.next()
+		if f.checkCells() == 0 {
+			return "Game Over\n"
+		}
+	}
 	for i, line := range f.cells {
 		str += strconv.Itoa(i+1) + " "
 		for _, val := range line {
