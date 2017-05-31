@@ -7,11 +7,46 @@ import (
 type field struct {
 	turn  color
 	dirty bool
-	cells [8][8]cell
+	cells [8][8]*cell
 }
 
 func Init() *field {
 	f := new(field)
+
+	for i := 0; i < 8; i++ {
+		for j := 0; j < 8; j++ {
+			f.cells[i][j] = new(cell)
+		}
+	}
+	for i := 0; i < 8; i++ {
+		for j := 0; j < 8; j++ {
+			if i > 0 && j > 0 {
+				f.cells[i][j].next[0] = f.cells[i-1][j-1]
+			}
+			if i > 0 {
+				f.cells[i][j].next[1] = f.cells[i-1][j]
+			}
+			if i > 0 && j < 7 {
+				f.cells[i][j].next[2] = f.cells[i-1][j+1]
+			}
+			if j > 0 {
+				f.cells[i][j].next[3] = f.cells[i][j-1]
+			}
+			if j < 7 {
+				f.cells[i][j].next[4] = f.cells[i][j+1]
+			}
+			if i < 7 && j > 0 {
+				f.cells[i][j].next[5] = f.cells[i+1][j-1]
+			}
+			if i < 7 {
+				f.cells[i][j].next[6] = f.cells[i+1][j]
+			}
+			if i < 7 && j < 7 {
+				f.cells[i][j].next[7] = f.cells[i+1][j+1]
+			}
+		}
+	}
+
 	f.turn = BLACK
 	f.dirty = true
 	f.cells[3][3].change(BLACK)
@@ -22,69 +57,21 @@ func Init() *field {
 	return f
 }
 
-func (f *field) itelator(i int, j int, i_offset int, j_offset int, callback func(*cell) bool) {
-	if i >= 0 && i <= 7 && j >= 0 && j <= 7 && callback(&f.cells[i][j]) {
-		f.itelator(i+i_offset, j+j_offset, i_offset, j_offset, callback)
-	}
-}
-
-func (f *field) check(i int, j int, i_offset int, j_offset int) []*cell {
-	result := []*cell{}
-	cells := []*cell{}
-	step := 0
-	f.itelator(i, j, i_offset, j_offset, func(c *cell) bool {
-		ret := true
-		cells = append(cells, c)
-		switch step {
-		case 0:
-			ret = c.isnot(BLACK | WHITE)
-			step++
-			break
-		case 1:
-			ret = c.is(BLACK|WHITE) && c.isnot(f.turn)
-			step++
-			break
-		case 2:
-			ret = c.is(BLACK|WHITE) && c.isnot(f.turn)
-			if c.is(f.turn) {
-				result = cells
-				f.cells[i][j].change(PUTABLE)
-			}
-			break
-		}
-		return ret
-	})
-	return result
-}
-
-func (f *field) checkCell(i int, j int) []*cell {
-	cells := append(f.check(i, j, -1, -1), f.check(i, j, -1, 0)...)
-	cells = append(cells, f.check(i, j, -1, 1)...)
-	cells = append(cells, f.check(i, j, 0, -1)...)
-	cells = append(cells, f.check(i, j, 0, 1)...)
-	cells = append(cells, f.check(i, j, 1, -1)...)
-	cells = append(cells, f.check(i, j, 1, 0)...)
-	cells = append(cells, f.check(i, j, 1, 1)...)
-
-	return cells
-}
-
 func (f *field) checkCells() int {
 	if f.dirty == false {
 		return -1
 	}
 	result := 0
-	for i, line := range f.cells {
-		for j, _ := range line {
-			c := &f.cells[i][j]
+	for _, line := range f.cells {
+		for _, c := range line {
 			if c.isnot(BLACK | WHITE) {
 				c.change(BLANK)
 			}
 		}
 	}
-	for i, line := range f.cells {
-		for j, _ := range line {
-			result += len(f.checkCell(i, j))
+	for _, line := range f.cells {
+		for _, c := range line {
+			result += len(c.check(f.turn))
 		}
 	}
 	return result
@@ -102,9 +89,8 @@ func (f *field) next() {
 }
 
 func (f *field) Select(i int, j int) {
-	cells := f.checkCell(i, j)
+	cells := f.cells[i][j].check(f.turn)
 	if f.cells[i][j].is(PUTABLE) {
-		f.cells[i][j].change(f.turn)
 		for _, cell := range cells {
 			cell.change(f.turn)
 		}
@@ -126,7 +112,7 @@ func (f *field) String() string {
 	for i, line := range f.cells {
 		str += strconv.Itoa(i+1) + " "
 		for _, val := range line {
-			str += val.string()
+			str += val.String()
 			switch val.color {
 			case BLACK:
 				black++
@@ -139,8 +125,8 @@ func (f *field) String() string {
 		str += "\n"
 	}
 	str += "\n" + "[Score] "
-	str += new(cell).change(BLACK).string() + " " + strconv.Itoa(black) + ", "
-	str += new(cell).change(WHITE).string() + " " + strconv.Itoa(white) + "\n"
-	str += "[Next]  " + new(cell).change(f.turn).string()
+	str += new(cell).change(BLACK).String() + " " + strconv.Itoa(black) + ", "
+	str += new(cell).change(WHITE).String() + " " + strconv.Itoa(white) + "\n"
+	str += "[Next]  " + new(cell).change(f.turn).String()
 	return str
 }

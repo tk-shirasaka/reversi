@@ -1,33 +1,12 @@
 package game
 
-import (
-	"github.com/tk-shirasaka/ansi"
-)
-
-type color int
-
-const (
-	BLANK   color = 0x0001
-	BLACK   color = 0x0010
-	WHITE   color = 0x0100
-	PUTABLE color = 0x1000
-)
-
 type cell struct {
 	color color
+	next  [8]*cell
 }
 
-func (c *cell) string() string {
-	switch c.color {
-	case BLACK:
-		return ansi.Color("● ", ansi.BLACK, ansi.GREEN)
-	case WHITE:
-		return ansi.Color("● ", ansi.WHITE, ansi.GREEN)
-	case PUTABLE:
-		return ansi.Color("[]", ansi.RED, ansi.GREEN)
-	default:
-		return ansi.Color("  ", ansi.WHITE, ansi.GREEN)
-	}
+func (c *cell) String() string {
+	return c.color.String()
 }
 
 func (c *cell) change(color color) *cell {
@@ -48,4 +27,45 @@ func (c *cell) is(mask interface{}) bool {
 
 func (c *cell) isnot(mask interface{}) bool {
 	return c.is(mask) == false
+}
+
+func (c *cell) iterator(i int, f func(*cell) bool) {
+	for now := c; now != nil && f(now); now = now.next[i] {
+	}
+}
+
+func (c *cell) check(color color) []*cell {
+	var result, cells []*cell
+	var status int
+
+	callback := func(now *cell) bool {
+		cells = append(cells, now)
+		if c == now {
+			status = 0
+			cells = []*cell{c}
+			return c.isnot(BLACK | WHITE)
+		} else if status == 0 && now.is((BLACK|WHITE) & ^color) {
+			status = 1
+			return true
+		} else if status == 1 && now.is((BLACK|WHITE) & ^color) {
+			return true
+		} else if status == 1 && now.is(color) {
+			result = append(result, cells...)
+			c.change(PUTABLE)
+			return false
+		} else {
+			return false
+		}
+	}
+
+	c.iterator(0, callback)
+	c.iterator(1, callback)
+	c.iterator(2, callback)
+	c.iterator(3, callback)
+	c.iterator(4, callback)
+	c.iterator(5, callback)
+	c.iterator(6, callback)
+	c.iterator(7, callback)
+
+	return result
 }
